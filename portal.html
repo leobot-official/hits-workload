@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body { 
+            background:#f4f7f6; 
+            padding-bottom: 120px; /* Space for sticky bar */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        }
+        
+        /* Branding Styles */
+        .header-branding {
+            background: white;
+            padding: 15px 0;
+            border-bottom: 4px solid #198754;
+            margin-bottom: 0;
+        }
+        .logo-img {
+            max-height: 80px;
+            width: auto;
+        }
+        .header-titles h1 { font-size: 1.4rem; margin: 0; color: #333; }
+        .header-titles h2 { font-size: 1.1rem; margin: 2px 0; color: #555; }
+        .header-titles h3 { font-size: 1rem; margin: 0; color: #198754; letter-spacing: 1px; }
+
+        /* Login Screen */
+        .login-container { 
+            background: #fff; 
+            width: 400px; 
+            padding: 40px; 
+            border-radius: 12px; 
+            margin: 60px auto; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+        }
+        
+        #main-app { display: none; }
+        .alert-floating { position: fixed; top: 20px; right: 20px; z-index: 2000; min-width: 320px; }
+        .nav-pills .nav-link.active { background-color: #198754; }
+        .card { border: none; transition: transform 0.2s; }
+        
+        /* Sticky Submit Bar */
+        #submit-bar {
+            display: none; 
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            padding: 15px;
+            border-top: 3px solid #198754;
+            z-index: 1050;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+        }
+        #submit-bar.active { display: block !important; }
+
+        /* Footer */
+        .footer-branding {
+            background: white;
+            padding: 30px 0;
+            margin-top: 50px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+        }
+        .footer-img {
+            max-width: 100%;
+            height: auto;
+            max-height: 70px;
+        }
+        
+        /* Utility */
+        .coord-view { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        select:disabled { background-color: #e9ecef !important; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+<div id="error-container" class="alert-floating"></div>
+
+<div id="app-header" class="header-branding shadow-sm">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-4 text-center text-md-start">
+                <img src="https://lh3.googleusercontent.com/d/1fGA1e5ZpDM5UlTnbVjeWbCgqQs4TIGc8" class="logo-img" alt="HITS Logo">
+            </div>
+            <div class="col-md-8 text-center text-md-end header-titles">
+                <h1 class="fw-bold text-uppercase">Hindustan Institute of Technology and Science</h1>
+                <h2 class="fw-semibold">SCHOOL OF BASIC AND APPLIED SCIENCES</h2>
+                <h2 class="text-muted small fw-bold">DEPARTMENT OF COMPUTER APPLICATIONS</h2>
+                <h3 class="fw-bold mt-2 text-uppercase">Master Workload Odd Semester 2026-2027</h3>
+                <span class="badge bg-success">Subject Preference Collection</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="login-screen">
+    <div class="login-container">
+        <h3 class="text-center mb-4 text-dark fw-bold">Workload Portal</h3>
+        <div class="d-grid gap-3">
+            <button class="btn btn-success btn-lg shadow-sm" id="fac-login-btn" onclick="handleLogin('Faculty')">
+                <i class="bi bi-person-badge me-2"></i>FACULTY LOGIN
+            </button>
+            <button class="btn btn-primary btn-lg shadow-sm" id="coord-login-btn" onclick="handleLogin('Coordinator')">
+                <i class="bi bi-shield-lock me-2"></i>COORDINATOR LOGIN
+            </button>
+        </div>
+        <div id="loader" class="text-center mt-4 d-none">
+            <div class="spinner-border text-success" role="status"></div>
+            <p class="mt-2 fw-bold text-muted small">Connecting to secure server...</p>
+        </div>
+    </div>
+</div>
+
+<div id="main-app">
+    <nav class="navbar navbar-dark bg-success mb-3 px-3 shadow-sm">
+        <div class="container-fluid">
+            <div class="text-white">
+                <div id="userDisplay" class="fw-bold"></div>
+                <div id="roleDisplay" class="small opacity-75"></div>
+                <div id="ctBadge" class="badge bg-warning text-dark d-none mt-1"></div>
+            </div>
+                <button onclick="appLogout()"  class="btn btn-outline-light btn-sm shadow-sm">   <i class="bi bi-box-arrow-right"></i> Logout</button>
+        </div>
+    </nav>
+
+    <div id="faculty-row-section" class="container" style="display:none;">
+        <div class="bg-white p-3 rounded shadow-sm mb-3 d-flex justify-content-between align-items-center">
+            <div>
+                <label class="me-2 fw-bold small text-muted">Show Records:</label>
+                <select id="recordsPerPage" class="form-select form-select-sm d-inline-block w-auto" onchange="changeRecordsPerPage(this.value)">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="15">15</option>
+                    <option value="20">20</option>
+                </select>
+            </div>
+            <div class="text-muted small italic">Tip: You can select up to 5 preferences.</div>
+        </div>
+
+        <ul class="nav nav-pills nav-fill mb-3 bg-white p-1 rounded border shadow-sm" id="tab-list">
+            <li class="nav-item"><button class="nav-link active" id="btn-BCA1" onclick="setCurrentTab('BCA1')">BCA S1</button></li>
+            <li class="nav-item"><button class="nav-link" id="btn-BCA2" onclick="setCurrentTab('BCA2')">BCA S2</button></li>
+            <li class="nav-item"><button class="nav-link" id="btn-MCA1" onclick="setCurrentTab('MCA1')">MCA S1</button></li>
+            <li class="nav-item"><button class="nav-link" id="btn-MCA2" onclick="setCurrentTab('MCA2')">MCA S2</button></li>
+        </ul>
+
+        <div id="active-container"></div>
+        
+        <div class="d-flex justify-content-center mt-4 pb-5">
+            <nav><ul class="pagination pagination-sm" id="pagination-controls"></ul></nav>
+        </div>
+    </div>
+
+    <div id="coordinator-view-section" class="container-fluid" style="display:none;">
+        <div class="card shadow-sm p-3 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="fw-bold m-0 text-dark">Coordinator Dashboard</h4>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-primary active" id="btn-faculty" onclick="switchCoordView('faculty', this)">Faculty Summary</button>
+                    <button class="btn btn-outline-primary" id="btn-subject" onclick="switchCoordView('subject', this)">Subject Summary</button>
+                    <button class="btn btn-outline-primary" id="btn-settings" onclick="switchCoordView('settings', this)">System Settings</button>
+                </div>
+            </div>
+            
+            <div id="view-faculty" class="coord-view table-responsive"></div>
+            <div id="view-subject" class="coord-view table-responsive" style="display:none;"></div>
+            
+            <div id="view-settings" class="coord-view" style="display:none;">
+                <div class="card p-4 border shadow-sm mx-auto" style="max-width: 600px;">
+                    <h5 class="text-primary fw-bold"><i class="bi bi-clock-history"></i> Submission Window</h5>
+                    <div class="row mt-3">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small">Opening Date & Time</label>
+                            <input type="datetime-local" id="start-time-input" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small">Closing Date & Time</label>
+                            <input type="datetime-local" id="end-time-input" class="form-control">
+                        </div>
+                    </div>
+                    <button class="btn btn-success w-100" onclick="saveSettings()">Update Time Slot</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="submit-bar">
+        <div class="container d-flex justify-content-center align-items-center">
+            <span class="me-4 fw-bold text-success"><i class="bi bi-check2-all me-1"></i> Minimum Preferences Met</span>
+            <button class="btn btn-primary btn-lg px-5 shadow" onclick="finalizeSubmission()">
+                Review & Final Submit <i class="bi bi-arrow-right-short ms-1"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<footer class="footer-branding">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <img src="https://lh3.googleusercontent.com/d/1s4XBLTJvPqHP8fYe_v_HIqAXjwFO6M8Z" class="footer-img" alt="Accreditations">
+            </div>
+        </div>
+        <p class="text-muted small mt-3 fw-semibold">© 2026 Hindustan Institute of Technology and Science. All Rights Reserved.</p>
+    </div>
+</footer>
+
+<div class="modal fade" id="summaryModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content shadow-lg border-0">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold"><i class="bi bi-card-checklist me-2"></i>Final Review</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="table-responsive">
+          <table class="table table-hover table-bordered align-middle">
+            <thead class="table-light">
+              <tr class="small text-uppercase fw-bold">
+                <th>#</th>
+                <th>Prog/Sem</th>
+                <th>Code</th>
+                <th>Subject</th>
+                <th>Sec</th>
+                <th>L-T-P</th>
+                <th>TCH</th>
+              </tr>
+            </thead>
+            <tbody id="summaryTableBody" class="small"></tbody>
+            <tfoot>
+              <tr class="table-info fw-bold">
+                <td colspan="6" class="text-end">Combined TCH Total:</td>
+                <td id="totalTchDisplay">0</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="alert alert-warning d-flex align-items-start mt-3" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+          <div class="small">
+            <strong>Permanent Action:</strong> Clicking finalize will lock your selections in the master database. You will retain view-only access to this summary after submission.
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Modify Choices</button>
+        <button type="button" class="btn btn-success px-4 fw-bold" onclick="executeFinalSubmit()">
+            Confirm & Lock Submission <i class="bi bi-lock-fill ms-1"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<?!= HtmlService.createHtmlOutputFromFile('script').getContent(); ?>
+</body>
+</html>
